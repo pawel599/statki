@@ -41,7 +41,7 @@ function getCellStyle(
     }
   }
 
-  const cursorClass = readOnly ? 'cursor-default' : 'cursor-pointer'
+  const cursorClass = blocked ? 'cursor-not-allowed' : readOnly ? 'cursor-default' : 'cursor-pointer'
 
   switch (state) {
     case 'empty':
@@ -62,7 +62,7 @@ function getCellStyle(
       }
     case 'miss':
       return {
-        className: `${base} ${cursorClass} ${clickAnim} ${staticAnim} bg-[#0d0d0d] border-[#2a2a2a] ${readOnly ? '' : 'hover:bg-[#1a1a1a]'}`,
+        className: `${base} ${cursorClass} ${clickAnim} ${staticAnim} bg-[#0a0a14] border-[#3a3a5a]`,
         style: {},
       }
   }
@@ -86,6 +86,8 @@ interface BoardProps {
   shaking?: boolean
   // Tryb tylko do odczytu — brak kursora pointer, brak hover
   readOnly?: boolean
+  // Plansza zablokowana (nie moja tura) — cursor-not-allowed
+  blocked?: boolean
 }
 
 export default function Board({
@@ -98,6 +100,7 @@ export default function Board({
   label,
   shaking,
   readOnly,
+  blocked,
 }: BoardProps) {
   const [animating, setAnimating] = useState<Set<string>>(new Set())
   const [staticNoise, setStaticNoise] = useState<Set<string>>(new Set())
@@ -220,10 +223,19 @@ export default function Board({
                   onMouseEnter={() => onCellHover?.(row, col)}
                 >
                   {state === 'miss' && (
-                    <span style={{ color: '#4a1a1a', fontSize: '1.1rem' }}>✕</span>
+                    <span
+                      style={{
+                        display: 'block',
+                        width: '10px',
+                        height: '10px',
+                        borderRadius: '50%',
+                        background: '#ccd6f6',
+                        boxShadow: '0 0 6px rgba(200,210,255,0.6)',
+                      }}
+                    />
                   )}
                   {state === 'hit' && (
-                    <span style={{ color: '#ff6600', textShadow: '0 0 8px #ff4400', fontSize: '1.2rem' }}>
+                    <span style={{ color: '#ff4400', textShadow: '0 0 10px #ff2200, 0 0 20px #aa0000', fontSize: '1.3rem', lineHeight: 1 }}>
                       ✕
                     </span>
                   )}

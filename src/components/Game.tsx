@@ -159,14 +159,16 @@ export default function Game({ gameId, playerId, isPlayer1, myShips }: GameProps
     )
 
     if (allSunk) {
+      // Wszystkie statki zatopione — koniec gry
       await supabase
         .from('games')
         .update({ winner_id: playerId, status: 'finished', current_turn: playerId })
         .eq('id', gameId)
-    } else {
-      // Przekaż turę
+    } else if (result === 'miss') {
+      // Pudło — tura przechodzi na przeciwnika
       await supabase.from('games').update({ current_turn: opponentId }).eq('id', gameId)
     }
+    // Trafienie (hit/sunk bez końca gry) — tura zostaje u tego samego gracza
 
     setShooting(false)
   }, [isMyTurn, shooting, opponentId, gameOver, enemyBoardCells, opponentShips, shots, playerId, gameId])
@@ -256,6 +258,7 @@ export default function Game({ gameId, playerId, isPlayer1, myShips }: GameProps
             cells={enemyBoardCells}
             label={isMyTurn ? '— Kliknij, aby strzelać —' : '— Hawkins —'}
             onCellClick={isMyTurn && !shooting ? handleShoot : undefined}
+            blocked={!isMyTurn || shooting}
           />
         </div>
       </div>
