@@ -64,6 +64,20 @@ export default function App() {
     setAppPhase('placement')
   }, [])
 
+  // Powrót do lobby po zakończeniu gry
+  const handleReturnToLobby = useCallback(() => {
+    setAppPhase('lobby')
+    setGameId(null)
+    setRoomCode(null)
+    setPlayerId(null)
+    setIsPlayer1(false)
+    setPlacedShips([])
+    setSelectedShip(null)
+    setHoverCell(null)
+    setIsReady(false)
+    readyChannelRef.current?.unsubscribe()
+  }, [])
+
   // Siatka wynikająca z rozmieszczonych statków
   const cells = useMemo<CellState[][]>(() => {
     const grid = createEmptyGrid()
@@ -259,6 +273,7 @@ export default function App() {
           playerId={playerId}
           isPlayer1={isPlayer1}
           myShips={placedShips}
+          onReturnToLobby={handleReturnToLobby}
         />
       )}
 

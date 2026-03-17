@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 
 // Typy możliwych stanów pojedynczego pola
-export type CellState = 'empty' | 'ship' | 'hit' | 'miss'
+export type CellState = 'empty' | 'ship' | 'hit' | 'miss' | 'sunk'
 
 // Klucz identyfikujący pole
 export function cellKey(row: number, col: number) {
@@ -64,6 +64,11 @@ function getCellStyle(
     case 'miss':
       return {
         className: `${base} ${cursorClass} ${clickAnim} ${staticAnim} bg-[#0a0a14] border-[#3a3a5a]`,
+        style: {},
+      }
+    case 'sunk':
+      return {
+        className: `${base} ${cursorClass} ${clickAnim} ${staticAnim} st-cell-sunk`,
         style: {},
       }
   }
@@ -238,6 +243,11 @@ export default function Board({
                   )}
                   {state === 'hit' && (
                     <span style={{ color: '#ff4400', textShadow: '0 0 8px #ff2200', fontSize: '1rem', lineHeight: 1 }}>
+                      ✕
+                    </span>
+                  )}
+                  {state === 'sunk' && (
+                    <span style={{ color: '#ff7700', textShadow: '0 0 10px #ff5500, 0 0 20px #cc3300', fontSize: '1rem', lineHeight: 1 }}>
                       ✕
                     </span>
                   )}
