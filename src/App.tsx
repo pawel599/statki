@@ -3,6 +3,7 @@ import { supabase } from './lib/supabase'
 import Board, { type CellState, cellKey } from './components/Board'
 import ShipPanel from './components/ShipPanel'
 import ChristmasLights from './components/ChristmasLights'
+import Lobby from './components/Lobby'
 import { useKonamiCode } from './hooks/useKonamiCode'
 import { useTypedWord } from './hooks/useTypedWord'
 import {
@@ -29,7 +30,16 @@ const DEMOGORGON_MESSAGES = [
 
 let shipIdCounter = 0
 
+type AppPhase = 'lobby' | 'placement'
+
 export default function App() {
+  // Faza aplikacji
+  const [appPhase, setAppPhase]   = useState<AppPhase>('lobby')
+  const [gameId, setGameId]       = useState<string | null>(null)
+  const [playerId, setPlayerId]   = useState<string | null>(null)
+  const [isPlayer1, setIsPlayer1] = useState(false)
+
+  // Stan rozstawiania statków
   const [placedShips, setPlacedShips]     = useState<PlacedShip[]>([])
   const [selectedShip, setSelectedShip]   = useState<ShipType | null>(null)
   const [horizontal, setHorizontal]       = useState(true)
@@ -41,7 +51,14 @@ export default function App() {
   const [demoMessage]                     = useState(
     () => DEMOGORGON_MESSAGES[Math.floor(Math.random() * DEMOGORGON_MESSAGES.length)],
   )
-  const [dbStatus, setDbStatus]           = useState<string | null>(null)
+
+  // Przejście z lobby do rozstawiania po stworzeniu/dołączeniu do gry
+  const handleGameReady = useCallback((gId: string, pId: string, p1: boolean) => {
+    setGameId(gId)
+    setPlayerId(pId)
+    setIsPlayer1(p1)
+    setAppPhase('placement')
+  }, [])
 
   // Siatka wynikająca z rozmieszczonych statków
   const cells = useMemo<CellState[][]>(() => {
@@ -80,7 +97,6 @@ export default function App() {
     for (const c of shipCells) {
       const clampedRow = Math.max(0, Math.min(9, c.row))
       const clampedCol = Math.max(0, Math.min(9, c.col))
-      // Użyj przyciętych współrzędnych tylko gdy oryginalne wychodzą poza planszę
       const key = c.row === clampedRow && c.col === clampedCol
         ? cellKey(c.row, c.col)
         : cellKey(clampedRow, clampedCol)
@@ -109,7 +125,6 @@ export default function App() {
     const newPlaced = [...placedShips, newShip]
     const placedCount = newPlaced.filter((s) => s.type === selectedDef.type).length
     if (placedCount >= selectedDef.count) {
-      // Przejdź do następnego nieukończonego statku
       const next = SHIP_DEFINITIONS.find((def) => {
         const count = newPlaced.filter((s) => s.type === def.type).length
         return count < def.count
@@ -131,23 +146,20 @@ export default function App() {
     (def) => placedShips.filter((s) => s.type === def.type).length >= def.count,
   )
 
-  function handleReady() {
-    if (!allPlaced) return
+  async function handleReady() {
+    if (!allPlaced || !gameId || !playerId) return
     setIsReady(true)
     setSelectedShip(null)
     setHoverCell(null)
-  }
 
-  // Test połączenia z Supabase — odczyt liczby rekordów w tabeli games
-  useEffect(() => {
-    supabase
-      .from('games')
-      .select('*', { count: 'exact', head: true })
-      .then(({ count, error }) => {
-        if (error) setDbStatus(`Błąd: ${error.message}`)
-        else setDbStatus(`połączono · games: ${count ?? 0}`)
-      })
-  }, [])
+    // Zapisz rozstawienie w tabeli boards
+    await supabase.from('boards').upsert({
+      game_id: gameId,
+      player_id: playerId,
+      ships: placedShips,
+      is_ready: true,
+    }, { onConflict: 'game_id,player_id' })
+  }
 
   // Obrót statku — klawisz R lub prawy przycisk myszy
   const handleRotate = useCallback(() => setHorizontal((h) => !h), [])
@@ -179,6 +191,7 @@ export default function App() {
   }, [demogorgon])
   useKonamiCode(triggerDemogorgon)
 
+  // ── Wspólny wrapper ──────────────────────────────────────────────────────────
   return (
     <div
       className="min-h-screen flex flex-col items-center justify-center gap-6"
@@ -188,87 +201,93 @@ export default function App() {
 
       <h1 className="st-title text-6xl mt-8">Stranger Statki</h1>
 
-      {/* Układ poziomy: panel + plansza */}
-      <div className="flex items-start gap-8">
-        <ShipPanel
-          placedShips={placedShips}
-          selectedShip={selectedShip}
-          horizontal={horizontal}
-          onSelect={setSelectedShip}
-          onRotate={handleRotate}
-          onRandom={handleRandom}
-          onReady={handleReady}
-        />
-
-        <Board
-          cells={cells}
-          onCellClick={handleCellClick}
-          previewCells={selectedShip ? previewCells : undefined}
-          onCellHover={selectedShip ? setHoverCell : undefined}
-          onBoardLeave={() => setHoverCell(null)}
-          onRightClick={selectedShip ? handleRotate : undefined}
-          label="— Upside Down —"
-          shaking={shaking}
-        />
-      </div>
-
-      {/* Podpowiedzi */}
-      <div className="flex flex-col items-center gap-1">
-        {selectedShip ? (
-          <p className="text-xs tracking-widest uppercase" style={{ color: '#664400', textShadow: '0 0 6px #442200' }}>
-            Kliknij planszę, aby umieścić • [R] lub PPM = obrót
-          </p>
-        ) : (
-          <p className="text-xs tracking-widest uppercase" style={{ color: '#660000', textShadow: '0 0 6px #440000' }}>
-            Wybierz statek z panelu
-          </p>
-        )}
-        <p className="text-xs tracking-wider" style={{ color: '#330000' }}>
-          wpisz "eleven" • ↑↑↓↓←→←→BA
-        </p>
-      </div>
-
-      {/* Status połączenia z Supabase */}
-      {dbStatus && (
-        <p
-          className="text-xs tracking-wider"
-          style={{ color: dbStatus.startsWith('Błąd') ? '#660000' : '#003311', textShadow: dbStatus.startsWith('Błąd') ? '0 0 6px #440000' : 'none' }}
-        >
-          Supabase: {dbStatus}
-        </p>
+      {/* ── LOBBY ── */}
+      {appPhase === 'lobby' && (
+        <Lobby onGameReady={handleGameReady} />
       )}
 
-      {/* Ekran potwierdzenia — gracz kliknął GOTOWY */}
-      {isReady && (
-        <div
-          className="fixed inset-0 z-40 flex items-center justify-center st-demogorgon-enter"
-          style={{ background: 'rgba(0,0,0,0.92)' }}
-          onClick={() => setIsReady(false)}
-        >
-          <div className="flex flex-col items-center gap-6 select-none">
-            <div
-              className="text-center font-bold tracking-[0.2em] uppercase"
-              style={{
-                fontFamily: "'Bebas Neue', sans-serif",
-                fontSize: '3.5rem',
-                color: '#00ff66',
-                textShadow: '0 0 20px #00cc44, 0 0 50px #008822',
-                lineHeight: 1.1,
-              }}
-            >
-              FLOTA GOTOWA<br />
-              <span style={{ fontSize: '1.4rem', color: '#00aa44', letterSpacing: '0.3em' }}>
-                DO WALKI
-              </span>
-            </div>
-            <div style={{ color: '#003311', fontSize: '0.7rem', letterSpacing: '0.3em' }}>
-              kliknij, aby kontynuować
-            </div>
+      {/* ── ROZSTAWIANIE STATKÓW ── */}
+      {appPhase === 'placement' && (
+        <>
+          {/* Identyfikator gry */}
+          <p className="text-xs tracking-widest uppercase" style={{ color: '#330010' }}>
+            pokój: <span style={{ color: '#661122' }}>{gameId?.replace(/-/g, '').slice(0, 6).toUpperCase()}</span>
+            {' · '}gracz {isPlayer1 ? '1' : '2'}
+          </p>
+
+          {/* Układ poziomy: panel + plansza */}
+          <div className="flex items-start gap-8">
+            <ShipPanel
+              placedShips={placedShips}
+              selectedShip={selectedShip}
+              horizontal={horizontal}
+              onSelect={setSelectedShip}
+              onRotate={handleRotate}
+              onRandom={handleRandom}
+              onReady={handleReady}
+            />
+
+            <Board
+              cells={cells}
+              onCellClick={handleCellClick}
+              previewCells={selectedShip ? previewCells : undefined}
+              onCellHover={selectedShip ? setHoverCell : undefined}
+              onBoardLeave={() => setHoverCell(null)}
+              onRightClick={selectedShip ? handleRotate : undefined}
+              label="— Upside Down —"
+              shaking={shaking}
+            />
           </div>
-        </div>
+
+          {/* Podpowiedzi */}
+          <div className="flex flex-col items-center gap-1">
+            {selectedShip ? (
+              <p className="text-xs tracking-widest uppercase" style={{ color: '#664400', textShadow: '0 0 6px #442200' }}>
+                Kliknij planszę, aby umieścić • [R] lub PPM = obrót
+              </p>
+            ) : (
+              <p className="text-xs tracking-widest uppercase" style={{ color: '#660000', textShadow: '0 0 6px #440000' }}>
+                Wybierz statek z panelu
+              </p>
+            )}
+            <p className="text-xs tracking-wider" style={{ color: '#330000' }}>
+              wpisz "eleven" • ↑↑↓↓←→←→BA
+            </p>
+          </div>
+
+          {/* Ekran potwierdzenia — gracz kliknął GOTOWY */}
+          {isReady && (
+            <div
+              className="fixed inset-0 z-40 flex items-center justify-center st-demogorgon-enter"
+              style={{ background: 'rgba(0,0,0,0.92)' }}
+              onClick={() => setIsReady(false)}
+            >
+              <div className="flex flex-col items-center gap-6 select-none">
+                <div
+                  className="text-center font-bold tracking-[0.2em] uppercase"
+                  style={{
+                    fontFamily: "'Bebas Neue', sans-serif",
+                    fontSize: '3.5rem',
+                    color: '#00ff66',
+                    textShadow: '0 0 20px #00cc44, 0 0 50px #008822',
+                    lineHeight: 1.1,
+                  }}
+                >
+                  FLOTA GOTOWA<br />
+                  <span style={{ fontSize: '1.4rem', color: '#00aa44', letterSpacing: '0.3em' }}>
+                    DO WALKI
+                  </span>
+                </div>
+                <div style={{ color: '#003311', fontSize: '0.7rem', letterSpacing: '0.3em' }}>
+                  oczekiwanie na przeciwnika…
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
-      {/* Jumpscare Demogorgona */}
+      {/* Jumpscare Demogorgona — zawsze aktywny */}
       {demogorgon && (
         <div
           className={`fixed inset-0 z-50 flex items-center justify-center ${demoExiting ? 'st-demogorgon-exit' : 'st-demogorgon-enter'}`}
