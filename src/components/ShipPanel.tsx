@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { SHIP_DEFINITIONS, type ShipType, type PlacedShip } from '../store/ships'
+import ShipIcon from './ShipIcon'
 
 interface ShipPanelProps {
   placedShips: PlacedShip[]
@@ -95,20 +96,28 @@ export default function ShipPanel({
                 </span>
               </div>
 
-              {/* Miniaturka statku */}
-              <div className="flex gap-0.5 items-center">
-                {Array.from({ length: def.size }, (_, i) => (
-                  <div
-                    key={i}
-                    className="h-3.5 rounded-sm"
-                    style={{
-                      width: `${Math.min(22, 110 / def.size)}px`,
-                      background: isFullyPlaced ? '#1a0010' : isSelected ? '#cc2200' : '#550a1a',
-                      boxShadow: isSelected ? '0 0 4px rgba(200,50,0,0.5)' : 'none',
-                    }}
-                  />
-                ))}
-                <span className="text-xs ml-1" style={{ color: '#441122' }}>×{def.size}</span>
+              {/* Ikona potwora + rozmiar */}
+              <div className="flex items-center gap-2">
+                <ShipIcon
+                  type={def.type}
+                  size={28}
+                  color={isSelected ? '#ff4400' : '#cc2200'}
+                  dim={isFullyPlaced}
+                />
+                <div className="flex gap-0.5 items-center">
+                  {Array.from({ length: def.size }, (_, i) => (
+                    <div
+                      key={i}
+                      className="h-2 rounded-sm"
+                      style={{
+                        width: `${Math.min(18, 90 / def.size)}px`,
+                        background: isFullyPlaced ? '#1a0010' : isSelected ? '#cc2200' : '#550a1a',
+                        boxShadow: isSelected ? '0 0 4px rgba(200,50,0,0.5)' : 'none',
+                      }}
+                    />
+                  ))}
+                  <span className="text-xs ml-1" style={{ color: '#441122' }}>×{def.size}</span>
+                </div>
               </div>
             </button>
           )

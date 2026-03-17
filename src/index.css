@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
-/* Czcionka Stranger Things — imitacja efektu neonowego tytułu */
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
+/* Czcionki — Bebas Neue dla UI + Metal Mania dla tytułu (styl Stranger Things) */
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Metal+Mania&display=swap');
 
 /* Animacja migotania tytułu — efekt starego telewizora */
 @keyframes flicker {
@@ -36,7 +36,7 @@
 }
 
 .st-title {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: 'Metal Mania', serif;
   color: #ff2a2a;
   text-shadow:
     0 0 10px #ff0000,
@@ -44,7 +44,7 @@
     0 0 60px #cc0000,
     0 0 100px #990000;
   animation: flicker 6s infinite;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
 }
 
 .st-cell-hit {

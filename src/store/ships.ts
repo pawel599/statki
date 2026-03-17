@@ -9,12 +9,12 @@ export interface ShipDefinition {
   count: number
 }
 
-// Flota gracza zgodna z zasadami gry
+// Flota gracza zgodna z zasadami gry — potwory z Upside Down
 export const SHIP_DEFINITIONS: ShipDefinition[] = [
-  { type: 'carrier',    name: 'Lotniskowiec', size: 5, count: 1 },
-  { type: 'battleship', name: 'Pancernik',    size: 4, count: 1 },
-  { type: 'cruiser',    name: 'Krążownik',    size: 3, count: 2 },
-  { type: 'destroyer',  name: 'Niszczyciel',  size: 2, count: 1 },
+  { type: 'carrier',    name: 'Mind Flayer',  size: 5, count: 1 },
+  { type: 'battleship', name: 'Demogorgon',   size: 4, count: 1 },
+  { type: 'cruiser',    name: 'Demodog',      size: 3, count: 2 },
+  { type: 'destroyer',  name: 'Dart',         size: 2, count: 1 },
 ]
 
 export interface PlacedShip {

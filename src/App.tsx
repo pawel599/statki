@@ -3,6 +3,7 @@ import { supabase } from './lib/supabase'
 import Board, { type CellState, cellKey } from './components/Board'
 import ShipPanel from './components/ShipPanel'
 import ChristmasLights from './components/ChristmasLights'
+import ParticleBackground from './components/ParticleBackground'
 import Lobby from './components/Lobby'
 import Game from './components/Game'
 import { useKonamiCode } from './hooks/useKonamiCode'
@@ -255,11 +256,23 @@ export default function App() {
   return (
     <div
       className="min-h-screen flex flex-col items-center justify-center gap-3"
-      style={{ background: 'radial-gradient(ellipse at center, #0a0010 0%, #000000 100%)' }}
+      style={{
+        position: 'relative',
+        background: `
+          radial-gradient(ellipse at 50% 0%,   #1a0000 0%,  transparent 60%),
+          radial-gradient(ellipse at 50% 100%, #0d000a 0%,  transparent 60%),
+          radial-gradient(ellipse at 0%   50%, #080008 0%,  transparent 50%),
+          radial-gradient(ellipse at 100% 50%, #0a0003 0%,  transparent 50%),
+          #050005
+        `,
+      }}
     >
+      <ParticleBackground />
+      {/* Cała treść nad canvasem */}
+      <div className="flex flex-col items-center gap-3 w-full" style={{ position: 'relative', zIndex: 1 }}>
       <ChristmasLights />
 
-      <h1 className="st-title text-5xl mt-2">Stranger Statki</h1>
+      <h1 className="st-title text-7xl mt-2">Stranger Statki</h1>
 
       {/* ── LOBBY ── */}
       {appPhase === 'lobby' && (
@@ -400,6 +413,7 @@ export default function App() {
           </div>
         </div>
       )}
+      </div>{/* koniec wrappera z-index:1 */}
     </div>
   )
 }
