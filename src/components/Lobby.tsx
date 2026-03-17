@@ -140,7 +140,7 @@ export default function Lobby({ onGameReady }: LobbyProps) {
       return
     }
 
-    onGameReady(game.id, playerId, false, game.room_code)
+    onGameReady(game.id, playerId, false, game.room_code ?? '')
   }
 
   // ── Widok oczekiwania (po stworzeniu gry) ───────────────────────────────────
