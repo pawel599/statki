@@ -18,7 +18,7 @@ function getCellStyle(
   blocked: boolean,
 ): { className: string; style: React.CSSProperties } {
   const base =
-    'w-12 h-12 border flex items-center justify-center select-none text-sm font-bold transition-colors duration-100 relative'
+    'w-[52px] h-[52px] border flex items-center justify-center select-none text-sm font-bold transition-colors duration-100 relative'
 
   const clickAnim = isClicked
     ? state === 'miss'
@@ -177,11 +177,11 @@ export default function Board({
       >
         {/* Nagłówek kolumn */}
         <div className="flex">
-          <div className="w-12 h-12" />
+          <div className="w-[52px] h-[52px]" />
           {COL_LABELS.map((col) => (
             <div
               key={col}
-              className="w-12 h-12 flex items-center justify-center text-xs font-semibold"
+              className="w-[52px] h-[52px] flex items-center justify-center text-xs font-semibold"
               style={{ color: '#cc3300', textShadow: '0 0 6px #cc3300' }}
             >
               {col}
@@ -194,7 +194,7 @@ export default function Board({
           <div key={row} className="flex">
             {/* Etykieta wiersza */}
             <div
-              className="w-12 h-12 flex items-center justify-center text-xs font-semibold"
+              className="w-[52px] h-[52px] flex items-center justify-center text-xs font-semibold"
               style={{ color: '#cc3300', textShadow: '0 0 6px #cc3300' }}
             >
               {ROW_LABELS[row]}
