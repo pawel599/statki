@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from 'react'
+import { supabase } from './lib/supabase'
 import Board, { type CellState, cellKey } from './components/Board'
 import ShipPanel from './components/ShipPanel'
 import ChristmasLights from './components/ChristmasLights'
@@ -40,6 +41,7 @@ export default function App() {
   const [demoMessage]                     = useState(
     () => DEMOGORGON_MESSAGES[Math.floor(Math.random() * DEMOGORGON_MESSAGES.length)],
   )
+  const [dbStatus, setDbStatus]           = useState<string | null>(null)
 
   // Siatka wynikająca z rozmieszczonych statków
   const cells = useMemo<CellState[][]>(() => {
@@ -136,6 +138,17 @@ export default function App() {
     setHoverCell(null)
   }
 
+  // Test połączenia z Supabase — odczyt liczby rekordów w tabeli games
+  useEffect(() => {
+    supabase
+      .from('games')
+      .select('*', { count: 'exact', head: true })
+      .then(({ count, error }) => {
+        if (error) setDbStatus(`Błąd: ${error.message}`)
+        else setDbStatus(`połączono · games: ${count ?? 0}`)
+      })
+  }, [])
+
   // Obrót statku — klawisz R lub prawy przycisk myszy
   const handleRotate = useCallback(() => setHorizontal((h) => !h), [])
 
@@ -214,6 +227,16 @@ export default function App() {
           wpisz "eleven" • ↑↑↓↓←→←→BA
         </p>
       </div>
+
+      {/* Status połączenia z Supabase */}
+      {dbStatus && (
+        <p
+          className="text-xs tracking-wider"
+          style={{ color: dbStatus.startsWith('Błąd') ? '#660000' : '#003311', textShadow: dbStatus.startsWith('Błąd') ? '0 0 6px #440000' : 'none' }}
+        >
+          Supabase: {dbStatus}
+        </p>
+      )}
 
       {/* Ekran potwierdzenia — gracz kliknął GOTOWY */}
       {isReady && (
