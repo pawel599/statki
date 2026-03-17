@@ -102,7 +102,7 @@ export default function ShipPanel({
                     key={i}
                     className="h-3.5 rounded-sm"
                     style={{
-                      width: `${Math.min(28, 148 / def.size)}px`,
+                      width: `${Math.min(22, 110 / def.size)}px`,
                       background: isFullyPlaced ? '#1a0010' : isSelected ? '#cc2200' : '#550a1a',
                       boxShadow: isSelected ? '0 0 4px rgba(200,50,0,0.5)' : 'none',
                     }}

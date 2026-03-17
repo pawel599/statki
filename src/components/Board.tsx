@@ -18,7 +18,7 @@ function getCellStyle(
   blocked: boolean,
 ): { className: string; style: React.CSSProperties } {
   const base =
-    'w-14 h-14 border flex items-center justify-center select-none text-base font-bold transition-colors duration-100 relative'
+    'w-10 h-10 border flex items-center justify-center select-none text-sm font-bold transition-colors duration-100 relative'
 
   const clickAnim = isClicked
     ? state === 'miss'
@@ -164,7 +164,7 @@ export default function Board({
 
       {/* Ramka planszy */}
       <div
-        className={`p-3 rounded ${shaking ? 'st-telekinesis' : ''}`}
+        className={`p-2 rounded ${shaking ? 'st-telekinesis' : ''}`}
         style={{
           boxShadow: '0 0 30px 4px rgba(150, 0, 0, 0.25), inset 0 0 20px rgba(0,0,0,0.8)',
           background: '#03060f',
@@ -177,11 +177,11 @@ export default function Board({
       >
         {/* Nagłówek kolumn */}
         <div className="flex">
-          <div className="w-14 h-14" />
+          <div className="w-10 h-10" />
           {COL_LABELS.map((col) => (
             <div
               key={col}
-              className="w-14 h-14 flex items-center justify-center text-sm font-semibold"
+              className="w-10 h-10 flex items-center justify-center text-xs font-semibold"
               style={{ color: '#cc3300', textShadow: '0 0 6px #cc3300' }}
             >
               {col}
@@ -194,7 +194,7 @@ export default function Board({
           <div key={row} className="flex">
             {/* Etykieta wiersza */}
             <div
-              className="w-14 h-14 flex items-center justify-center text-sm font-semibold"
+              className="w-10 h-10 flex items-center justify-center text-xs font-semibold"
               style={{ color: '#cc3300', textShadow: '0 0 6px #cc3300' }}
             >
               {ROW_LABELS[row]}
@@ -228,16 +228,16 @@ export default function Board({
                     <span
                       style={{
                         display: 'block',
-                        width: '10px',
-                        height: '10px',
+                        width: '7px',
+                        height: '7px',
                         borderRadius: '50%',
                         background: '#ccd6f6',
-                        boxShadow: '0 0 6px rgba(200,210,255,0.6)',
+                        boxShadow: '0 0 5px rgba(200,210,255,0.6)',
                       }}
                     />
                   )}
                   {state === 'hit' && (
-                    <span style={{ color: '#ff4400', textShadow: '0 0 10px #ff2200, 0 0 20px #aa0000', fontSize: '1.3rem', lineHeight: 1 }}>
+                    <span style={{ color: '#ff4400', textShadow: '0 0 8px #ff2200', fontSize: '1rem', lineHeight: 1 }}>
                       ✕
                     </span>
                   )}
