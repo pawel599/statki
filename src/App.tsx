@@ -36,9 +36,10 @@ type AppPhase = 'lobby' | 'placement' | 'playing'
 export default function App() {
   // Faza aplikacji
   const [appPhase, setAppPhase]   = useState<AppPhase>('lobby')
-  const [gameId, setGameId]       = useState<string | null>(null)
-  const [playerId, setPlayerId]   = useState<string | null>(null)
-  const [isPlayer1, setIsPlayer1] = useState(false)
+  const [gameId, setGameId]         = useState<string | null>(null)
+  const [roomCode, setRoomCode]     = useState<string | null>(null)
+  const [playerId, setPlayerId]     = useState<string | null>(null)
+  const [isPlayer1, setIsPlayer1]   = useState(false)
 
   // Stan rozstawiania statków
   const [placedShips, setPlacedShips]     = useState<PlacedShip[]>([])
@@ -55,8 +56,9 @@ export default function App() {
   )
 
   // Przejście z lobby do rozstawiania po stworzeniu/dołączeniu do gry
-  const handleGameReady = useCallback((gId: string, pId: string, p1: boolean) => {
+  const handleGameReady = useCallback((gId: string, pId: string, p1: boolean, code: string) => {
     setGameId(gId)
+    setRoomCode(code)
     setPlayerId(pId)
     setIsPlayer1(p1)
     setAppPhase('placement')
@@ -265,7 +267,7 @@ export default function App() {
         <>
           {/* Identyfikator gry */}
           <p className="text-xs tracking-widest uppercase" style={{ color: '#330010' }}>
-            pokój: <span style={{ color: '#661122' }}>{gameId?.replace(/-/g, '').slice(0, 6).toUpperCase()}</span>
+            pokój: <span style={{ color: '#661122' }}>{roomCode}</span>
             {' · '}gracz {isPlayer1 ? '1' : '2'}
           </p>
 

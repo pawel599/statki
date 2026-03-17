@@ -2,12 +2,13 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 
 interface LobbyProps {
-  onGameReady: (gameId: string, playerId: string, isPlayer1: boolean) => void
+  onGameReady: (gameId: string, playerId: string, isPlayer1: boolean, roomCode: string) => void
 }
 
-// Pierwsze 6 znaków UUID (bez myślników) jako kod pokoju
-function toRoomCode(uuid: string): string {
-  return uuid.replace(/-/g, '').slice(0, 6).toUpperCase()
+// Generuje 6-znakowy kod pokoju — pomija mylące znaki (0/O, 1/I/L)
+function generateRoomCode(): string {
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
+  return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
 }
 
 // Pobierz lub wygeneruj trwały ID gracza (na sesję)
@@ -51,7 +52,7 @@ export default function Lobby({ onGameReady }: LobbyProps) {
           const game = payload.new as { status: string; player2_id: string | null }
           if (game.status === 'placement' && game.player2_id) {
             channelRef.current?.unsubscribe()
-            onGameReady(waitingGameId, playerId, true)
+            onGameReady(waitingGameId, playerId, true, waitingRoomCode ?? '')
           }
         },
       )
@@ -76,9 +77,11 @@ export default function Lobby({ onGameReady }: LobbyProps) {
 
     const playerId = getOrCreatePlayerId()
 
+    const roomCode = generateRoomCode()
+
     const { data, error: dbErr } = await supabase
       .from('games')
-      .insert({ status: 'waiting', player1_id: playerId })
+      .insert({ status: 'waiting', player1_id: playerId, room_code: roomCode })
       .select()
       .single()
 
@@ -90,7 +93,7 @@ export default function Lobby({ onGameReady }: LobbyProps) {
     }
 
     setWaitingGameId(data.id as string)
-    setWaitingRoomCode(toRoomCode(data.id as string))
+    setWaitingRoomCode(roomCode)
   }
 
   // Dołącz do istniejącej gry
@@ -103,11 +106,11 @@ export default function Lobby({ onGameReady }: LobbyProps) {
     const playerId = getOrCreatePlayerId()
     const code = joinCode.trim().toUpperCase()
 
-    // Znajdź grę po prefiksie kodu
+    // Znajdź grę po kodzie pokoju
     const { data: games, error: findErr } = await supabase
       .from('games')
       .select()
-      .ilike('id', `${code.toLowerCase()}%`)
+      .eq('room_code', code)
       .eq('status', 'waiting')
       .limit(1)
 
@@ -117,7 +120,7 @@ export default function Lobby({ onGameReady }: LobbyProps) {
       return
     }
 
-    const game = games[0] as { id: string; player1_id: string }
+    const game = games[0] as { id: string; player1_id: string; room_code: string }
 
     if (game.player1_id === playerId) {
       setLoading(null)
@@ -137,7 +140,7 @@ export default function Lobby({ onGameReady }: LobbyProps) {
       return
     }
 
-    onGameReady(game.id, playerId, false)
+    onGameReady(game.id, playerId, false, game.room_code)
   }
 
   // ── Widok oczekiwania (po stworzeniu gry) ───────────────────────────────────
