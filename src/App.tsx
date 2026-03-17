@@ -315,7 +315,7 @@ export default function App() {
               cells={cells}
               onCellClick={handleCellClick}
               previewCells={selectedShip ? previewCells : undefined}
-              onCellHover={selectedShip ? setHoverCell : undefined}
+              onCellHover={selectedShip ? (row, col) => setHoverCell({ row, col }) : undefined}
               onBoardLeave={() => setHoverCell(null)}
               onRightClick={selectedShip ? handleRotate : undefined}
               label="— Upside Down —"
