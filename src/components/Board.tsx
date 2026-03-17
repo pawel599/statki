@@ -15,6 +15,7 @@ function getCellStyle(
   isClicked: boolean,
   hasStatic: boolean,
   readOnly: boolean,
+  blocked: boolean,
 ): { className: string; style: React.CSSProperties } {
   const base =
     'w-14 h-14 border flex items-center justify-center select-none text-base font-bold transition-colors duration-100 relative'
@@ -212,6 +213,7 @@ export default function Board({
                 animating.has(key),
                 staticNoise.has(key),
                 readOnly ?? false,
+                blocked ?? false,
               )
 
               return (
