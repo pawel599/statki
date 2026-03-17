@@ -1,9 +1,10 @@
-import { useState, useCallback, useMemo, useEffect } from 'react'
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { supabase } from './lib/supabase'
 import Board, { type CellState, cellKey } from './components/Board'
 import ShipPanel from './components/ShipPanel'
 import ChristmasLights from './components/ChristmasLights'
 import Lobby from './components/Lobby'
+import Game from './components/Game'
 import { useKonamiCode } from './hooks/useKonamiCode'
 import { useTypedWord } from './hooks/useTypedWord'
 import {
@@ -30,7 +31,7 @@ const DEMOGORGON_MESSAGES = [
 
 let shipIdCounter = 0
 
-type AppPhase = 'lobby' | 'placement'
+type AppPhase = 'lobby' | 'placement' | 'playing'
 
 export default function App() {
   // Faza aplikacji
@@ -46,6 +47,7 @@ export default function App() {
   const [hoverCell, setHoverCell]         = useState<{ row: number; col: number } | null>(null)
   const [isReady, setIsReady]             = useState(false)
   const [shaking, setShaking]             = useState(false)
+  const readyChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
   const [demogorgon, setDemogorgon]       = useState(false)
   const [demoExiting, setDemoExiting]     = useState(false)
   const [demoMessage]                     = useState(
@@ -159,6 +161,48 @@ export default function App() {
       ships: placedShips,
       is_ready: true,
     }, { onConflict: 'game_id,player_id' })
+
+    // Sprawdź czy przeciwnik już gotowy — i subskrybuj na wypadek gdyby nie był
+    const startGame = async () => {
+      const { data: boards } = await supabase
+        .from('boards')
+        .select('is_ready')
+        .eq('game_id', gameId)
+      const allReady = boards?.length === 2 && boards.every((b) => b.is_ready)
+      if (!allReady) return
+
+      // Tylko gracz 1 ustawia current_turn i status
+      if (isPlayer1) {
+        const { data: game } = await supabase
+          .from('games').select('player1_id').eq('id', gameId).single()
+        if (game) {
+          await supabase.from('games').update({
+            status: 'playing',
+            current_turn: game.player1_id,
+          }).eq('id', gameId)
+        }
+      }
+    }
+
+    await startGame()
+
+    // Subskrypcja Realtime: boards (gdy przeciwnik zapisze planszę) + games (gdy status → playing)
+    readyChannelRef.current = supabase
+      .channel(`ready-${gameId}`)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'boards', filter: `game_id=eq.${gameId}` },
+        () => startGame(),
+      )
+      .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'games', filter: `id=eq.${gameId}` },
+        (payload) => {
+          if ((payload.new as { status: string }).status === 'playing') {
+            readyChannelRef.current?.unsubscribe()
+            setAppPhase('playing')
+          }
+        },
+      )
+      .subscribe()
   }
 
   // Obrót statku — klawisz R lub prawy przycisk myszy
@@ -204,6 +248,16 @@ export default function App() {
       {/* ── LOBBY ── */}
       {appPhase === 'lobby' && (
         <Lobby onGameReady={handleGameReady} />
+      )}
+
+      {/* ── ROZGRYWKA ── */}
+      {appPhase === 'playing' && gameId && playerId && (
+        <Game
+          gameId={gameId}
+          playerId={playerId}
+          isPlayer1={isPlayer1}
+          myShips={placedShips}
+        />
       )}
 
       {/* ── ROZSTAWIANIE STATKÓW ── */}

@@ -14,6 +14,7 @@ function getCellStyle(
   preview: 'valid' | 'invalid' | null,
   isClicked: boolean,
   hasStatic: boolean,
+  readOnly: boolean,
 ): { className: string; style: React.CSSProperties } {
   const base =
     'w-14 h-14 border flex items-center justify-center select-none text-base font-bold transition-colors duration-100 relative'
@@ -40,18 +41,18 @@ function getCellStyle(
     }
   }
 
-  const cursorClass = 'cursor-pointer'
+  const cursorClass = readOnly ? 'cursor-default' : 'cursor-pointer'
 
   switch (state) {
     case 'empty':
       return {
-        className: `${base} ${cursorClass} ${clickAnim} ${staticAnim} bg-[#050d1a] border-[#1a2a4a] hover:bg-[#0a1f3a] hover:border-[#2a4a7a]`,
+        className: `${base} ${cursorClass} ${clickAnim} ${staticAnim} bg-[#050d1a] border-[#1a2a4a] ${readOnly ? '' : 'hover:bg-[#0a1f3a] hover:border-[#2a4a7a]'}`,
         style: {},
       }
     case 'ship':
       // Zielona bioluminescencja — grzybnia Upside Down
       return {
-        className: `${base} ${cursorClass} ${clickAnim} ${staticAnim} st-cell-ship hover:brightness-125`,
+        className: `${base} ${cursorClass} ${clickAnim} ${staticAnim} st-cell-ship ${readOnly ? '' : 'hover:brightness-125'}`,
         style: {},
       }
     case 'hit':
@@ -61,7 +62,7 @@ function getCellStyle(
       }
     case 'miss':
       return {
-        className: `${base} ${cursorClass} ${clickAnim} ${staticAnim} bg-[#0d0d0d] border-[#2a2a2a] hover:bg-[#1a1a1a]`,
+        className: `${base} ${cursorClass} ${clickAnim} ${staticAnim} bg-[#0d0d0d] border-[#2a2a2a] ${readOnly ? '' : 'hover:bg-[#1a1a1a]'}`,
         style: {},
       }
   }
@@ -74,7 +75,7 @@ const GRID_SIZE = 10
 
 interface BoardProps {
   cells: CellState[][]
-  onCellClick: (row: number, col: number) => void
+  onCellClick?: (row: number, col: number) => void
   // Mapa klucz → valid/invalid dla podglądu rozmieszczania statku
   previewCells?: Map<string, boolean>
   onCellHover?: (row: number, col: number) => void
@@ -83,6 +84,8 @@ interface BoardProps {
   onRightClick?: () => void
   label?: string
   shaking?: boolean
+  // Tryb tylko do odczytu — brak kursora pointer, brak hover
+  readOnly?: boolean
 }
 
 export default function Board({
@@ -94,6 +97,7 @@ export default function Board({
   onRightClick,
   label,
   shaking,
+  readOnly,
 }: BoardProps) {
   const [animating, setAnimating] = useState<Set<string>>(new Set())
   const [staticNoise, setStaticNoise] = useState<Set<string>>(new Set())
@@ -128,6 +132,7 @@ export default function Board({
 
   const handleClick = useCallback(
     (row: number, col: number) => {
+      if (!onCellClick) return
       const key = cellKey(row, col)
       setAnimating((prev) => new Set(prev).add(key))
       setTimeout(() => {
@@ -203,6 +208,7 @@ export default function Board({
                 preview,
                 animating.has(key),
                 staticNoise.has(key),
+                readOnly ?? false,
               )
 
               return (
