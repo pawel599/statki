@@ -49,8 +49,9 @@ function getCellStyle(
         style: {},
       }
     case 'ship':
+      // Zielona bioluminescencja — grzybnia Upside Down
       return {
-        className: `${base} ${cursorClass} ${clickAnim} ${staticAnim} bg-[#1a0a2a] border-[#3a1a5a] hover:bg-[#2a1040]`,
+        className: `${base} ${cursorClass} ${clickAnim} ${staticAnim} st-cell-ship hover:brightness-125`,
         style: {},
       }
     case 'hit':

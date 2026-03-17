@@ -39,6 +39,45 @@ export function getShipCells(ship: {
   }))
 }
 
+// Generuje losowe, prawidłowe rozmieszczenie całej floty
+export function randomPlacement(): PlacedShip[] {
+  // Próbuje wielokrotnie od nowa, jeśli losowanie się zaklinuje
+  for (let restart = 0; restart < 30; restart++) {
+    const placed: PlacedShip[] = []
+    let failed = false
+
+    for (const def of SHIP_DEFINITIONS) {
+      let shipPlaced = false
+
+      // Dla każdego statku próbuje do 200 losowych pozycji
+      for (let attempt = 0; attempt < 200; attempt++) {
+        const horizontal = Math.random() < 0.5
+        const row = Math.floor(Math.random() * 10)
+        const col = Math.floor(Math.random() * 10)
+
+        if (isValidPlacement(row, col, def.size, horizontal, placed)) {
+          placed.push({
+            id: `rand-${restart}-${def.type}-${attempt}`,
+            type: def.type,
+            size: def.size,
+            row,
+            col,
+            horizontal,
+          })
+          shipPlaced = true
+          break
+        }
+      }
+
+      if (!shipPlaced) { failed = true; break }
+    }
+
+    if (!failed) return placed
+  }
+
+  return []
+}
+
 // Sprawdza czy rozmieszczenie statku jest prawidłowe (granice + margines 1 pola od innych)
 export function isValidPlacement(
   row: number,

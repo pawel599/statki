@@ -10,6 +10,7 @@ import {
   type PlacedShip,
   getShipCells,
   isValidPlacement,
+  randomPlacement,
 } from './store/ships'
 
 // Tworzy pustą planszę 10×10
@@ -32,6 +33,7 @@ export default function App() {
   const [selectedShip, setSelectedShip]   = useState<ShipType | null>(null)
   const [horizontal, setHorizontal]       = useState(true)
   const [hoverCell, setHoverCell]         = useState<{ row: number; col: number } | null>(null)
+  const [isReady, setIsReady]             = useState(false)
   const [shaking, setShaking]             = useState(false)
   const [demogorgon, setDemogorgon]       = useState(false)
   const [demoExiting, setDemoExiting]     = useState(false)
@@ -59,6 +61,7 @@ export default function App() {
   // Mapa podglądu — klucz pola → czy umieszczenie jest prawidłowe
   const previewCells = useMemo<Map<string, boolean>>(() => {
     if (!selectedDef || !hoverCell) return new Map()
+
     const valid = isValidPlacement(
       hoverCell.row,
       hoverCell.col,
@@ -66,13 +69,22 @@ export default function App() {
       horizontal,
       placedShips,
     )
+
     const preview = new Map<string, boolean>()
-    for (const c of getShipCells({ ...hoverCell, size: selectedDef.size, horizontal })) {
-      // Pokaż tylko pola w granicach planszy
-      if (c.row >= 0 && c.row < 10 && c.col >= 0 && c.col < 10) {
-        preview.set(cellKey(c.row, c.col), valid)
-      }
+    const shipCells = getShipCells({ ...hoverCell, size: selectedDef.size, horizontal })
+
+    // Gdy statek wykracza poza planszę — przytnij podgląd do krawędzi,
+    // ale pokoloruj tyle pól ile widać, żeby gracz widział czerwony sygnał
+    for (const c of shipCells) {
+      const clampedRow = Math.max(0, Math.min(9, c.row))
+      const clampedCol = Math.max(0, Math.min(9, c.col))
+      // Użyj przyciętych współrzędnych tylko gdy oryginalne wychodzą poza planszę
+      const key = c.row === clampedRow && c.col === clampedCol
+        ? cellKey(c.row, c.col)
+        : cellKey(clampedRow, clampedCol)
+      preview.set(key, valid)
     }
+
     return preview
   }, [selectedDef, hoverCell, horizontal, placedShips])
 
@@ -102,6 +114,26 @@ export default function App() {
       })
       setSelectedShip(next?.type ?? null)
     }
+  }
+
+  // Losowe rozmieszczenie całej floty
+  function handleRandom() {
+    const ships = randomPlacement()
+    setPlacedShips(ships)
+    setSelectedShip(null)
+    setHoverCell(null)
+  }
+
+  // Potwierdzenie gotowości — aktywne tylko gdy wszystkie statki rozstawione
+  const allPlaced = SHIP_DEFINITIONS.every(
+    (def) => placedShips.filter((s) => s.type === def.type).length >= def.count,
+  )
+
+  function handleReady() {
+    if (!allPlaced) return
+    setIsReady(true)
+    setSelectedShip(null)
+    setHoverCell(null)
   }
 
   // Obrót statku — klawisz R lub prawy przycisk myszy
@@ -151,6 +183,8 @@ export default function App() {
           horizontal={horizontal}
           onSelect={setSelectedShip}
           onRotate={handleRotate}
+          onRandom={handleRandom}
+          onReady={handleReady}
         />
 
         <Board
@@ -180,6 +214,36 @@ export default function App() {
           wpisz "eleven" • ↑↑↓↓←→←→BA
         </p>
       </div>
+
+      {/* Ekran potwierdzenia — gracz kliknął GOTOWY */}
+      {isReady && (
+        <div
+          className="fixed inset-0 z-40 flex items-center justify-center st-demogorgon-enter"
+          style={{ background: 'rgba(0,0,0,0.92)' }}
+          onClick={() => setIsReady(false)}
+        >
+          <div className="flex flex-col items-center gap-6 select-none">
+            <div
+              className="text-center font-bold tracking-[0.2em] uppercase"
+              style={{
+                fontFamily: "'Bebas Neue', sans-serif",
+                fontSize: '3.5rem',
+                color: '#00ff66',
+                textShadow: '0 0 20px #00cc44, 0 0 50px #008822',
+                lineHeight: 1.1,
+              }}
+            >
+              FLOTA GOTOWA<br />
+              <span style={{ fontSize: '1.4rem', color: '#00aa44', letterSpacing: '0.3em' }}>
+                DO WALKI
+              </span>
+            </div>
+            <div style={{ color: '#003311', fontSize: '0.7rem', letterSpacing: '0.3em' }}>
+              kliknij, aby kontynuować
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Jumpscare Demogorgona */}
       {demogorgon && (
