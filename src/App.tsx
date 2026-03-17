@@ -240,12 +240,12 @@ export default function App() {
   // ── Wspólny wrapper ──────────────────────────────────────────────────────────
   return (
     <div
-      className="min-h-screen flex flex-col items-center justify-center gap-6"
+      className="min-h-screen flex flex-col items-center justify-center gap-3"
       style={{ background: 'radial-gradient(ellipse at center, #0a0010 0%, #000000 100%)' }}
     >
       <ChristmasLights />
 
-      <h1 className="st-title text-6xl mt-8">Stranger Statki</h1>
+      <h1 className="st-title text-5xl mt-2">Stranger Statki</h1>
 
       {/* ── LOBBY ── */}
       {appPhase === 'lobby' && (
